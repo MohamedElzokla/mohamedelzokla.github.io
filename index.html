@@ -1,8 +1,31 @@
-<a href="itms-services://?action=download-manifest&url=https://mohamedelzokla.github.io/gathern.plist">
-Tap Here to Install ( production )
-</a>
-<br>
-<br/>
-<a href="itms-services://?action=download-manifest&url=https://mohamedelzokla.github.io/gathern-staging.plist">
-Tap Here to Install ( staging)
-</a>
+<head></head>
+
+<body>
+    <div>
+    <a id="installbtn"  href="itms-services://?action=download-manifest&url=">Install App</a>
+</div>
+</body>
+<script>
+    let params = new URL(document.location.toString()).searchParams;
+    console.log(params);
+    let url = params.get("plist");
+    
+
+    var myLink = document.getElementById("installbtn");
+    console.log(myLink);
+   myLink.href = "itms-services://?action=download-manifest&url=" + url ;
+
+
+    
+
+</script>
+
+<style>
+div {
+    width:auto;
+    height:auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+}
+</style>
