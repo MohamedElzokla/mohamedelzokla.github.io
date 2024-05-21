@@ -8,9 +8,14 @@
 </head>
 
 <body>
-    <div>
-    <a id="installbtn" class="btn btn-info" role="button"  href="itms-services://?action=download-manifest&url=">Install App</a>
+
+
+<div class="container">
+  <div class="center">
+    <a id="installbtn" class="btn btn-primary btn-lg" role="button"  href="itms-services://?action=download-manifest&url=">Install App</a>
+  </div>
 </div>
+   
 </body>
 <script>
     let params = new URL(document.location.toString()).searchParams;
@@ -27,11 +32,17 @@
 </script>
 
 <style>
-div {
-    width:auto;
-    height:auto;
-    position: fixed;
-    top: 50%;
-    left: 50%;
+.container {
+  height: 200px;
+  position: relative;
+}
+
+.center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
 }
 </style>
