@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  <script>
+    // 1. Define your target destination URL
+    const TARGET_URL = "https://10.16.36.3:4100/verify-otp";
+
+    // 2. Preserve incoming query parameters (?token=XYZ&id=123)
+    const queryString = window.location.search;
+    const finalDestination = TARGET_URL + queryString;
+
+    // 3. Perform immediate redirect (replace prevents cluttering browser back history)
+    window.location.replace(finalDestination);
+  </script>
+  
+  <!-- Fallback meta refresh if JavaScript is disabled in the browser -->
+  <meta http-equiv="refresh" content="0;url=https://10.16.36.3:4100//verify-otp">
+</head>
+<body style="background: transparent; margin: 0; padding: 0;">
+</body>
+</html>
