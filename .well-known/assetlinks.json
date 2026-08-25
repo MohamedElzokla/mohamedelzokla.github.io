@@ -1,0 +1,20 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android",
+      "package_name": "com.gizasystems.scrap",
+      "sha256_cert_fingerprints": [
+       'EE:D1:DA:E2:39:9E:D3:78:C0:AF:6D:AC:93:A8:0D:8E:18:C5:70:76:52:89:EB:5E:F2:4A:E6:2B:7B:9A:E0:AB',
+'CE:68:0D:AC:27:BA:43:25:AE:64:A8:DB:64:0D:91:20:12:30:50:72:D9:EF:69:26:0E:97:01:46:86:69:87:0D',
+'51:80:75:D1:5B:8D:A5:46:96:A4:0E:9B:C3:48:9A:B2:AF:0A:C5:68:29:84:BC:6C:EA:19:89:8C:A5:D6:56:71',
+'B5:D2:BB:6B:18:8B:16:BA:77:2C:8C:7A:A2:0D:B1:4E:FB:8B:20:FC:BF:F9:75:B3:EC:3B:75:46:E9:96:89:84',
+'EE:D1:DA:E2:39:9E:D3:78:C0:AF:6D:AC:93:A8:0D:8E:18:C5:70:76:52:89:EB:5E:F2:4A:E6:2B:7B:9A:E0:AB',
+'3E:C0:48:BC:3A:0A:A7:07:6D:D7:80:CB:F3:8F:74:5D:8C:51:42:2E:2E:85:AA:9D:84:A9:B8:30:67:6B:19:02',
+'3D:D2:94:56:E9:5C:55:CB:85:42:BF:E8:D3:DE:37:2F:70:72:B5:FA:60:03:A5:B5:B8:DB:99:2C:7D:E1:74:02'
+      ]
+    }
+  }
+]
