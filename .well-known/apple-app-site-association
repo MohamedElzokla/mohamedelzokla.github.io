@@ -7,11 +7,7 @@
         ],
         "components": [
           {
-            "/": "/verify-otp*"
-          },
-          {
-            "/": "/*",
-            "exclude": true
+            "/": "/verify-otp/*"
           }
         ]
       }
