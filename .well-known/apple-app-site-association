@@ -1,19 +1,23 @@
 {
   "applinks": {
-    "details": [ 
+    "details": [
       {
         "appIDs": [
           "H93H3ZQMQT.com.gizasystems.scrap"
         ],
         "components": [
-         {
-            "/": "/verify-otp/index.html",
-            "comment": "Allows only the verify-otp route"
-          },
           {
-            "/": "/*",
-            "exclude": true,
-            "comment": "Blocks all other routes"
+            "components": [
+              {
+                "/": "/verify-otp",
+                "comment": "Allows only the verify-otp route"
+              },
+              {
+                "/": "/*",
+                "exclude": true,
+                "comment": "Blocks all other routes"
+              }
+            ]
           }
         ]
       }
