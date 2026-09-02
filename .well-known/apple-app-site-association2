@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [ 
+      {
+        "appIDs": [
+          "H93H3ZQMQT.com.gizasystems.scrap"
+        ],
+        "components": [
+         { "/": "/*" }
+        ]
+      }
+    ]
+  }
+}
