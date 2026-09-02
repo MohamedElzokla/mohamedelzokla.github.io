@@ -7,7 +7,7 @@
         ],
         "components": [
           {
-            "/": "/verify-otp/*",
+            "/": "/verify-otp*",
             "comment": "Allows only the verify-otp route"
           },
           {
