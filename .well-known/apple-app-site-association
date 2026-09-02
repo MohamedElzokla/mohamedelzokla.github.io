@@ -6,8 +6,14 @@
           "H93H3ZQMQT.com.gizasystems.scrap"
         ],
         "components": [
+         {
+            "/": "/verify-otp",
+            "comment": "Allows only the verify-otp route"
+          },
           {
-            "components": [{ "/": "/*" }]
+            "/": "/*",
+            "exclude": true,
+            "comment": "Blocks all other routes"
           }
         ]
       }
