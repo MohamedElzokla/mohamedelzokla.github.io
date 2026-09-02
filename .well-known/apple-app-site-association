@@ -7,17 +7,13 @@
         ],
         "components": [
           {
-            "components": [
-              {
-                "/": "/verify-otp",
-                "comment": "Allows only the verify-otp route"
-              },
-              {
-                "/": "/*",
-                "exclude": true,
-                "comment": "Blocks all other routes"
-              }
-            ]
+            "/": "/verify-otp/*",
+            "comment": "Allows only the verify-otp route"
+          },
+          {
+            "/": "/*",
+            "exclude": true,
+            "comment": "Blocks all other routes"
           }
         ]
       }
