@@ -6,9 +6,7 @@
           "H93H3ZQMQT.com.gizasystems.scrap"
         ],
         "components": [
-          {
-            "components": [{ "/": "/*" }]
-          }
+         { "/": "/*" }
         ]
       }
     ]
