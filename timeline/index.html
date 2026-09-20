@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Team Timeline & Dependency Manager</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --primary: #3b82f6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --overlap: #f59e0b;
+      --danger: #ef4444;
+      --accent: #10b981;
+      --weekend: #f43f5e;
+      --weekend-bg: #1e1b2e;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+    }
+
+    h1 { margin-top: 0; font-size: 1.5rem; color: #fff; }
+
+    /* MINI STATISTICS DASHBOARD */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-value.highlight { color: var(--accent); }
+    .stat-value.warning { color: var(--overlap); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      font-size: 1.05rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      box-sizing: border-box;
+    }
+
+    input[type="color"] {
+      padding: 2px;
+      height: 36px;
+      cursor: pointer;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .row-color {
+      display: grid;
+      grid-template-columns: 1fr 50px;
+      gap: 8px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 9px 12px;
+      background: var(--primary);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button:hover { opacity: 0.9; }
+    button.secondary { background: #475569; }
+    button.danger { background: var(--danger); }
+
+    .btn-export {
+      background: var(--accent);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-export:hover { opacity: 0.9; }
+
+    .timeline-wrapper {
+      overflow-x: auto;
+    }
+
+    .timeline-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      background: var(--bg);
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 650px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      user-select: none;
+    }
+
+    th {
+      background: #0f172a;
+      color: var(--muted);
+    }
+
+    th.month-header {
+      background: #1e293b;
+      color: var(--primary);
+      font-weight: bold;
+      border-bottom: 2px solid var(--primary);
+      padding: 8px;
+    }
+
+    th.weekend-header {
+      background: var(--weekend-bg) !important;
+      color: var(--weekend) !important;
+      border-bottom: 2px solid var(--weekend);
+    }
+
+    td.weekend-col {
+      background-color: rgba(244, 63, 94, 0.03);
+    }
+
+    td.task-title {
+      text-align: left;
+      font-weight: 500;
+      white-space: nowrap;
+      position: sticky;
+      left: 0;
+      background: var(--card);
+      z-index: 2;
+    }
+
+    .team-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-right: 6px;
+    }
+
+    .active-cell {
+      border-radius: 4px;
+      opacity: 0.9;
+      cursor: grab;
+      transition: transform 0.1s ease;
+    }
+
+    .active-cell:active {
+      cursor: grabbing;
+      opacity: 1;
+      transform: scale(0.98);
+    }
+
+    .active-cell.is-weekend {
+      background-image: repeating-linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.3),
+        rgba(0, 0, 0, 0.3) 6px,
+        transparent 6px,
+        transparent 12px
+      );
+    }
+
+    .active-cell.intersecting {
+      box-shadow: inset 0 0 0 2px var(--overlap);
+      opacity: 1;
+    }
+
+    .drag-over {
+      background-color: rgba(59, 130, 246, 0.25) !important;
+      border: 2px dashed var(--primary) !important;
+    }
+
+    .overlap-row {
+      background: #111827;
+      font-weight: bold;
+    }
+
+    .overlap-indicator {
+      color: var(--overlap);
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .box {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .box.weekend-box {
+      background: var(--weekend-bg);
+      border: 1px solid var(--weekend);
+    }
+
+    .action-icon {
+      cursor: pointer;
+      margin-left: 6px;
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+    .action-icon:hover { opacity: 1; }
+    .action-icon.delete { color: var(--danger); }
+    .action-icon.edit { color: var(--primary); }
+
+    .team-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Multi-Team Sizing & Intersection Timeline</h1>
+
+  <!-- MINI STATISTICS DASHBOARD -->
+  <div class="stats-container">
+    <div class="stat-card">
+      <span class="stat-label">Start Date</span>
+      <span class="stat-value highlight" id="statStart">-</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">End Date</span>
+      <span class="stat-value highlight" id="statEnd">-</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Total Duration</span>
+      <span class="stat-value" id="statSpan">-</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Total Effort</span>
+      <span class="stat-value" id="statEffort">-</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Peak Concurrency</span>
+      <span class="stat-value warning" id="statPeak">-</span>
+    </div>
+  </div>
+
+  <div class="legend" id="teamLegend"></div>
+
+  <div class="layout">
+    <!-- LEFT CONTROL PANEL -->
+    <div>
+      <!-- 1. MANAGE TEAMS CARD -->
+      <div class="card">
+        <h3 id="teamFormTitle">Add / Manage Teams</h3>
+        <input type="hidden" id="editingTeamId" value="">
+        
+        <div class="form-group row-color">
+          <div>
+            <label>Team Name</label>
+            <input type="text" id="teamNameInput" placeholder="e.g. Backend, Security">
+          </div>
+          <div>
+            <label>Color</label>
+            <input type="color" id="teamColorInput" value="#3b82f6">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button id="saveTeamBtn" onclick="saveTeam()">Add Team</button>
+          <button id="cancelTeamBtn" class="secondary" style="display:none;" onclick="resetTeamForm()">Cancel</button>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <label>Configured Teams:</label>
+          <div id="teamList"></div>
+        </div>
+      </div>
+
+      <!-- 2. ADD / EDIT TASK CARD -->
+      <div class="card">
+        <h3 id="taskFormTitle">Add Task Sizing</h3>
+        <input type="hidden" id="editingTaskId" value="">
+
+        <div class="form-group">
+          <label>Task / Feature Name</label>
+          <input type="text" id="featureName" placeholder="e.g. POS, Checkout">
+        </div>
+
+        <div class="form-group">
+          <label>Assigned Team</label>
+          <select id="taskTeamSelect"></select>
+        </div>
+
+        <div class="form-group">
+          <label>Sizing Effort (Person-Days)</label>
+          <input type="number" id="sizingDays" value="4" min="1" oninput="autoCalcEnd()">
+        </div>
+
+        <div class="row-2">
+          <div class="form-group">
+            <label>Start Day Index</label>
+            <input type="number" id="startDay" value="1" min="1" oninput="autoCalcEnd()">
+          </div>
+          <div class="form-group">
+            <label>End Day Index</label>
+            <input type="number" id="endDay" value="4" min="1" oninput="autoCalcSizing()">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button id="saveTaskBtn" onclick="saveTask()">Add Task Sizing</button>
+          <button id="cancelTaskBtn" class="secondary" style="display:none;" onclick="resetTaskForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT TIMELINE GRID -->
+    <div class="card timeline-wrapper">
+      <div class="timeline-toolbar">
+        <div class="toolbar-group">
+          <label for="projectStartDate" style="margin:0; font-weight:600;">Project Start:</label>
+          <input type="date" id="projectStartDate" value="2026-09-20" onchange="render()" style="width: auto; padding: 4px 8px;">
+        </div>
+
+        <div class="toolbar-group">
+          <label for="groupMode" style="margin: 0; font-weight: 600;">Grouping:</label>
+          <select id="groupMode" onchange="renderTimeline()" style="width: auto; padding: 4px 8px;">
+            <option value="month" selected>Calendar Month</option>
+            <option value="week">Weekly</option>
+            <option value="none">Flat Days Only</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group">
+          <input type="checkbox" id="skipWeekends" onchange="autoCalcEnd(); render();" style="width:auto; cursor:pointer;" checked>
+          <label for="skipWeekends" style="margin:0; font-weight: 600; cursor:pointer; color: var(--text);">Exclude Fri/Sat from Sizing</label>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="btn-export" onclick="exportToCSV()" title="Export timeline tasks to CSV format">
+            📥 Export CSV
+          </button>
+        </div>
+      </div>
+
+      <table id="timelineTable">
+        <thead>
+          <tr id="monthHeaderRow"></tr>
+          <tr id="headerRow">
+            <th style="min-width: 240px;">Task & Team</th>
+            <!-- Day headers -->
+          </tr>
+        </thead>
+        <tbody id="timelineBody">
+          <!-- Rows -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Empty Teams State
+    let teams = [];
+
+    // Empty Tasks State
+    let tasks = [];
+
+    // Drag-and-Drop Global State
+    let draggedTaskId = null;
+    let dragDayOffset = 0;
+
+    // --- CALENDAR & WEEKEND HELPERS ---
+    function getProjectStartDate() {
+      const val = document.getElementById("projectStartDate").value;
+      if (!val) return new Date();
+      const [year, month, day] = val.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function getDateForDay(dayNumber) {
+      const date = getProjectStartDate();
+      date.setDate(date.getDate() + (dayNumber - 1));
+      return date;
+    }
+
+    function isWeekend(date) {
+      // Friday (5) and Saturday (6)
+      const d = date.getDay();
+      return d === 5 || d === 6;
+    }
+
+    function formatDayHeader(dayNumber) {
+      const date = getDateForDay(dayNumber);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[date.getDay()];
+      const dayNum = date.getDate();
+      const monthNum = date.getMonth() + 1;
+
+      return `
+        <div style="font-size:0.68rem; text-transform:uppercase; opacity:0.8;">${dayName}</div>
+        <div style="font-weight:bold;">${monthNum}/${dayNum}</div>
+        <div style="font-size:0.65rem; color:var(--muted);">D${dayNumber}</div>
+      `;
+    }
+
+    // --- DAY / SIZING CALCULATION LOGIC ---
+    function autoCalcEnd() {
+      const start = parseInt(document.getElementById("startDay").value) || 1;
+      const sizing = parseInt(document.getElementById("sizingDays").value) || 1;
+      const skipWknd = document.getElementById("skipWeekends").checked;
+
+      if (!skipWknd) {
+        document.getElementById("endDay").value = start + sizing - 1;
+        return;
+      }
+
+      let currentDay = start;
+      let addedWorkDays = 0;
+
+      while (addedWorkDays < sizing) {
+        const date = getDateForDay(currentDay);
+        if (!isWeekend(date)) {
+          addedWorkDays++;
+        }
+        if (addedWorkDays < sizing) {
+          currentDay++;
+        }
+      }
+      document.getElementById("endDay").value = currentDay;
+    }
+
+    function autoCalcSizing() {
+      const start = parseInt(document.getElementById("startDay").value) || 1;
+      const end = parseInt(document.getElementById("endDay").value) || start;
+      const skipWknd = document.getElementById("skipWeekends").checked;
+
+      if (end >= start) {
+        if (!skipWknd) {
+          document.getElementById("sizingDays").value = (end - start) + 1;
+          return;
+        }
+
+        let workDays = 0;
+        for (let d = start; d <= end; d++) {
+          const date = getDateForDay(d);
+          if (!isWeekend(date)) {
+            workDays++;
+          }
+        }
+        document.getElementById("sizingDays").value = Math.max(1, workDays);
+      }
+    }
+
+    // --- CSV EXPORT LOGIC ---
+    function exportToCSV() {
+      if (tasks.length === 0) {
+        return alert("No tasks available to export.");
+      }
+
+      const headers = [
+        "Task / Feature",
+        "Team",
+        "Sizing Effort (Person-Days)",
+        "Start Day Index",
+        "End Day Index",
+        "Start Calendar Date",
+        "End Calendar Date"
+      ];
+
+      const rows = tasks.map(t => {
+        const team = teams.find(tm => tm.id === t.teamId) || { name: 'Unknown' };
+        const startDate = getDateForDay(t.startDay).toISOString().split('T')[0];
+        const endDate = getDateForDay(t.endDay).toISOString().split('T')[0];
+
+        const sanitizedFeature = `"${t.feature.replace(/"/g, '""')}"`;
+        const sanitizedTeam = `"${team.name.replace(/"/g, '""')}"`;
+
+        return [
+          sanitizedFeature,
+          sanitizedTeam,
+          t.sizing,
+          t.startDay,
+          t.endDay,
+          startDate,
+          endDate
+        ];
+      });
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(r => r.join(","))
+      ].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      
+      const fileDate = new Date().toISOString().split('T')[0];
+      link.setAttribute("href", url);
+      link.setAttribute("download", `timeline_export_${fileDate}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- MINI STATISTICS LOGIC ---
+    function updateStatistics() {
+      if (tasks.length === 0) {
+        document.getElementById("statStart").innerText = "-";
+        document.getElementById("statEnd").innerText = "-";
+        document.getElementById("statSpan").innerText = "0 Days";
+        document.getElementById("statEffort").innerText = "0 Person-Days";
+        document.getElementById("statPeak").innerText = "0 Teams";
+        return;
+      }
+
+      const minStart = Math.min(...tasks.map(t => t.startDay));
+      const maxEnd = Math.max(...tasks.map(t => t.endDay));
+      const startDate = getDateForDay(minStart);
+      const endDate = getDateForDay(maxEnd);
+
+      const totalSpan = (maxEnd - minStart) + 1;
+      const totalEffort = tasks.reduce((sum, t) => sum + (parseInt(t.sizing) || 0), 0);
+
+      let workDaysCount = 0;
+      for (let d = minStart; d <= maxEnd; d++) {
+        if (!isWeekend(getDateForDay(d))) workDaysCount++;
+      }
+
+      let dayOverlapCount = {};
+      tasks.forEach(t => {
+        for (let d = t.startDay; d <= t.endDay; d++) {
+          dayOverlapCount[d] = (dayOverlapCount[d] || 0) + 1;
+        }
+      });
+      const peakConcurrency = Math.max(...Object.values(dayOverlapCount), 0);
+
+      const fmt = (dt) => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      document.getElementById("statStart").innerText = fmt(startDate);
+      document.getElementById("statEnd").innerText = fmt(endDate);
+      document.getElementById("statSpan").innerText = `${totalSpan} Days (${workDaysCount} Workdays)`;
+      document.getElementById("statEffort").innerText = `${totalEffort} Person-Days`;
+      document.getElementById("statPeak").innerText = `${peakConcurrency} Team${peakConcurrency > 1 ? 's' : ''}`;
+    }
+
+    // --- TEAM MANAGEMENT LOGIC ---
+    function renderTeams() {
+      const teamList = document.getElementById("teamList");
+      if (teams.length === 0) {
+        teamList.innerHTML = '<span class="empty-state">No teams configured yet.</span>';
+      } else {
+        teamList.innerHTML = teams.map(t => `
+          <div class="team-list-item">
+            <div class="team-info">
+              <div class="box" style="background:${t.color}"></div>
+              <strong>${t.name}</strong>
+            </div>
+            <div>
+              <span class="action-icon edit" onclick="editTeam('${t.id}')">✎</span>
+              <span class="action-icon delete" onclick="deleteTeam('${t.id}')">&times;</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const select = document.getElementById("taskTeamSelect");
+      const currentSelected = select.value;
+      if (teams.length === 0) {
+        select.innerHTML = '<option value="">-- Add a team first --</option>';
+      } else {
+        select.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        if (currentSelected && teams.some(t => t.id === currentSelected)) {
+          select.value = currentSelected;
+        }
+      }
+
+      const legend = document.getElementById("teamLegend");
+      legend.innerHTML = teams.map(t => `
+        <div class="legend-item">
+          <div class="box" style="background:${t.color}"></div> ${t.name}
+        </div>
+      `).join('') + `
+        <div class="legend-item">
+          <div class="box weekend-box"></div> Weekend (Fri & Sat)
+        </div>
+        <div class="legend-item">
+          <div class="box" style="border:2px solid var(--overlap); background:transparent;"></div> Intersecting Work
+        </div>
+      `;
+    }
+
+    function saveTeam() {
+      const nameInput = document.getElementById("teamNameInput");
+      const colorInput = document.getElementById("teamColorInput");
+      const editingId = document.getElementById("editingTeamId").value;
+
+      const name = nameInput.value.trim();
+      if (!name) return alert("Please enter a team name.");
+
+      if (editingId) {
+        const team = teams.find(t => t.id === editingId);
+        if (team) {
+          team.name = name;
+          team.color = colorInput.value;
+        }
+      } else {
+        teams.push({
+          id: 't_' + Date.now(),
+          name: name,
+          color: colorInput.value
+        });
+      }
+
+      resetTeamForm();
+      render();
+    }
+
+    function editTeam(id) {
+      const team = teams.find(t => t.id === id);
+      if (!team) return;
+
+      document.getElementById("editingTeamId").value = team.id;
+      document.getElementById("teamNameInput").value = team.name;
+      document.getElementById("teamColorInput").value = team.color;
+
+      document.getElementById("teamFormTitle").innerText = "Edit Team";
+      document.getElementById("saveTeamBtn").innerText = "Update Team";
+      document.getElementById("cancelTeamBtn").style.display = "inline-block";
+    }
+
+    function resetTeamForm() {
+      document.getElementById("editingTeamId").value = "";
+      document.getElementById("teamNameInput").value = "";
+      document.getElementById("teamColorInput").value = "#3b82f6";
+
+      document.getElementById("teamFormTitle").innerText = "Add / Manage Teams";
+      document.getElementById("saveTeamBtn").innerText = "Add Team";
+      document.getElementById("cancelTeamBtn").style.display = "none";
+    }
+
+    function deleteTeam(id) {
+      if (tasks.some(t => t.teamId === id)) {
+        if (!confirm("This team has active tasks assigned. Delete team and its tasks?")) return;
+        tasks = tasks.filter(t => t.teamId !== id);
+      }
+      teams = teams.filter(t => t.id !== id);
+      render();
+    }
+
+    // --- TASK MANAGEMENT LOGIC ---
+    function saveTask() {
+      const feature = document.getElementById("featureName").value.trim();
+      const teamId = document.getElementById("taskTeamSelect").value;
+      const sizing = parseInt(document.getElementById("sizingDays").value);
+      const startDay = parseInt(document.getElementById("startDay").value);
+      const endDay = parseInt(document.getElementById("endDay").value);
+      const editingId = document.getElementById("editingTaskId").value;
+
+      if (!feature) return alert("Please enter a Task/Feature name.");
+      if (!teamId) return alert("Please select or create a team first.");
+      if (endDay < startDay) return alert("End day cannot be before start day.");
+
+      if (editingId) {
+        const task = tasks.find(t => t.id === parseInt(editingId));
+        if (task) {
+          task.feature = feature;
+          task.teamId = teamId;
+          task.sizing = sizing;
+          task.startDay = startDay;
+          task.endDay = endDay;
+        }
+      } else {
+        tasks.push({
+          id: Date.now(),
+          feature,
+          teamId,
+          sizing,
+          startDay,
+          endDay
+        });
+      }
+
+      resetTaskForm();
+      render();
+    }
+
+    function editTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      document.getElementById("editingTaskId").value = task.id;
+      document.getElementById("featureName").value = task.feature;
+      document.getElementById("taskTeamSelect").value = task.teamId;
+      document.getElementById("sizingDays").value = task.sizing;
+      document.getElementById("startDay").value = task.startDay;
+      document.getElementById("endDay").value = task.endDay;
+
+      document.getElementById("taskFormTitle").innerText = "Edit Task Sizing & Time";
+      document.getElementById("saveTaskBtn").innerText = "Save Changes";
+      document.getElementById("cancelTaskBtn").style.display = "inline-block";
+    }
+
+    function resetTaskForm() {
+      document.getElementById("editingTaskId").value = "";
+      document.getElementById("featureName").value = "";
+      document.getElementById("sizingDays").value = 4;
+      document.getElementById("startDay").value = 1;
+      document.getElementById("endDay").value = 4;
+
+      document.getElementById("taskFormTitle").innerText = "Add Task Sizing";
+      document.getElementById("saveTaskBtn").innerText = "Add Task Sizing";
+      document.getElementById("cancelTaskBtn").style.display = "none";
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      if (document.getElementById("editingTaskId").value == id) {
+        resetTaskForm();
+      }
+      render();
+    }
+
+    // --- DRAG AND DROP HANDLERS ---
+    function handleDragStart(e, taskId, currentDay) {
+      draggedTaskId = taskId;
+      const task = tasks.find(t => t.id === taskId);
+      dragDayOffset = currentDay - task.startDay;
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      e.currentTarget.classList.add("drag-over");
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove("drag-over");
+    }
+
+    function handleDrop(e, targetDay) {
+      e.preventDefault();
+      e.currentTarget.classList.remove("drag-over");
+
+      if (draggedTaskId === null) return;
+      const task = tasks.find(t => t.id === draggedTaskId);
+      if (!task) return;
+
+      const duration = task.endDay - task.startDay;
+      const newStartDay = Math.max(1, targetDay - dragDayOffset);
+      const newEndDay = newStartDay + duration;
+
+      task.startDay = newStartDay;
+      task.endDay = newEndDay;
+
+      draggedTaskId = null;
+      dragDayOffset = 0;
+      render();
+    }
+
+    // --- TIMELINE GRID RENDERER ---
+    function renderTimeline() {
+      let dayOverlapCount = {};
+      tasks.forEach(t => {
+        for (let d = t.startDay; d <= t.endDay; d++) {
+          dayOverlapCount[d] = (dayOverlapCount[d] || 0) + 1;
+        }
+      });
+
+      let maxDay = tasks.length > 0 ? Math.max(...tasks.map(t => t.endDay), 14) : 14;
+      const groupMode = document.getElementById("groupMode").value;
+
+      // 1. Render Grouping Top Header (Real Months / Weeks)
+      const monthHeaderRow = document.getElementById("monthHeaderRow");
+
+      if (groupMode === 'month') {
+        let currentMonthKey = null;
+        let monthSpan = 0;
+        let monthLabel = '';
+        let monthHeadersHtml = '<th style="min-width: 240px; border:none; background:transparent;"></th>';
+
+        for (let d = 1; d <= maxDay; d++) {
+          const date = getDateForDay(d);
+          const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+          const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+          if (currentMonthKey === null) {
+            currentMonthKey = monthKey;
+            monthLabel = label;
+            monthSpan = 1;
+          } else if (currentMonthKey === monthKey) {
+            monthSpan++;
+          } else {
+            monthHeadersHtml += `<th class="month-header" colspan="${monthSpan}">${monthLabel}</th>`;
+            currentMonthKey = monthKey;
+            monthLabel = label;
+            monthSpan = 1;
+          }
+        }
+        if (monthSpan > 0) {
+          monthHeadersHtml += `<th class="month-header" colspan="${monthSpan}">${monthLabel}</th>`;
+        }
+        monthHeaderRow.innerHTML = monthHeadersHtml;
+      } else if (groupMode === 'week') {
+        const totalWeeks = Math.ceil(maxDay / 7);
+        let monthHeadersHtml = '<th style="min-width: 240px; border:none; background:transparent;"></th>';
+        for (let w = 1; w <= totalWeeks; w++) {
+          const start = (w - 1) * 7 + 1;
+          const end = Math.min(w * 7, maxDay);
+          const span = (end - start) + 1;
+          monthHeadersHtml += `<th class="month-header" colspan="${span}">Week ${w}</th>`;
+        }
+        monthHeaderRow.innerHTML = monthHeadersHtml;
+      } else {
+        monthHeaderRow.innerHTML = '';
+      }
+
+      // 2. Render Day Headers (Highlighting Fri & Sat)
+      const headerRow = document.getElementById("headerRow");
+      headerRow.innerHTML = '<th style="min-width: 240px;">Task & Team</th>';
+      for (let d = 1; d <= maxDay; d++) {
+        const date = getDateForDay(d);
+        const wknd = isWeekend(date);
+        const headerClass = wknd ? 'class="weekend-header"' : '';
+        headerRow.innerHTML += `<th ${headerClass}>${formatDayHeader(d)}</th>`;
+      }
+
+      // 3. Render Task Rows
+      const body = document.getElementById("timelineBody");
+      body.innerHTML = "";
+
+      if (tasks.length === 0) {
+        body.innerHTML = `<tr><td colspan="${maxDay + 1}" class="empty-state" style="padding: 20px 0;">No tasks scheduled. Add teams and task sizings to build your timeline.</td></tr>`;
+      } else {
+        tasks.forEach(t => {
+          const team = teams.find(tm => tm.id === t.teamId) || { name: 'Unknown', color: '#64748b' };
+          let rowHtml = `<tr>
+            <td class="task-title">
+              <span class="team-badge" style="background:${team.color}20; color:${team.color}; border:1px solid ${team.color}40;">${team.name}</span>
+              <strong>${t.feature}</strong> (${t.sizing}d)
+              <span style="float:right;">
+                <span class="action-icon edit" title="Edit task time/details" onclick="editTask(${t.id})">✎</span>
+                <span class="action-icon delete" title="Delete task" onclick="deleteTask(${t.id})">&times;</span>
+              </span>
+            </td>`;
+
+          for (let d = 1; d <= maxDay; d++) {
+            let isActive = d >= t.startDay && d <= t.endDay;
+            let isIntersecting = isActive && dayOverlapCount[d] > 1;
+            const date = getDateForDay(d);
+            const wknd = isWeekend(date);
+            const cellBaseClass = wknd ? "weekend-col" : "";
+
+            if (isActive) {
+              let className = isIntersecting ? "active-cell intersecting" : "active-cell";
+              if (wknd) className += " is-weekend";
+
+              rowHtml += `<td class="${className} ${cellBaseClass}" 
+                              draggable="true"
+                              ondragstart="handleDragStart(event, ${t.id}, ${d})"
+                              ondragover="handleDragOver(event)"
+                              ondragleave="handleDragLeave(event)"
+                              ondrop="handleDrop(event, ${d})"
+                              style="background-color: ${team.color};" 
+                              title="${t.feature} [${team.name}] - ${date.toDateString()} (Drag to adjust timing)">
+                          </td>`;
+            } else {
+              rowHtml += `<td class="${cellBaseClass}" 
+                              ondragover="handleDragOver(event)" 
+                              ondragleave="handleDragLeave(event)" 
+                              ondrop="handleDrop(event, ${d})"></td>`;
+            }
+          }
+          rowHtml += `</tr>`;
+          body.innerHTML += rowHtml;
+        });
+      }
+
+      // 4. Render Concurrency Row
+      let overlapRowHtml = `<tr class="overlap-row"><td class="task-title">Active Teams / Concurrency</td>`;
+      for (let d = 1; d <= maxDay; d++) {
+        let count = dayOverlapCount[d] || 0;
+        let colorClass = count > 1 ? 'class="overlap-indicator"' : '';
+        const wknd = isWeekend(getDateForDay(d));
+        const cellBaseClass = wknd ? "weekend-col" : "";
+        overlapRowHtml += `<td ${colorClass} class="${cellBaseClass}">${count > 0 ? count : ''}</td>`;
+      }
+      overlapRowHtml += `</tr>`;
+      body.innerHTML += overlapRowHtml;
+    }
+
+    function render() {
+      renderTeams();
+      renderTimeline();
+      updateStatistics();
+    }
+
+    // Initial load
+    render();
+  </script>
+</body>
+</html>
